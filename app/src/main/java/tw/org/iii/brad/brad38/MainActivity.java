@@ -48,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
         public void onConnectStatusChanged(String mac, int status) {
             if (status == STATUS_CONNECTED) {
                 Log.v("brad", "connected");
+                test4(null);
             } else if (status == STATUS_DISCONNECTED) {
                 Log.v("brad", "disconnected");
             }
@@ -136,11 +137,16 @@ public class MainActivity extends AppCompatActivity {
     private UUID characterUUID = UUID.fromString("00002a19-0000-1000-8000-00805f9b34fb");
 
     public void test4(View view) {
+        Log.v("brad", connectMAC);
+        Log.v("brad", serviceUUID.toString());
+        Log.v("brad", characterUUID.toString());
+        mClient.refreshCache(connectMAC);
         mClient.notify(connectMAC, serviceUUID, characterUUID, new BleNotifyResponse() {
+
             @Override
             public void onNotify(UUID service, UUID character, byte[] value) {
                 Log.v("brad", "notify");
-                for (byte v : value){
+                for (int v : value){
                     Log.v("brad", "value = " + v);
                 }
             }
@@ -170,6 +176,7 @@ public class MainActivity extends AppCompatActivity {
             String mac = result.getAddress();
             //Log.v("brad", name + ":" + mac);
 
+            // BradAsus / Pixel 4 XL
             if (name.equals("BradAsus")){
                 Log.v("brad", "i got it");
                 connectMAC = mac;
