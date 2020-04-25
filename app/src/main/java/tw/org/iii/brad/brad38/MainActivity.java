@@ -116,11 +116,11 @@ public class MainActivity extends AppCompatActivity {
                     List<BleGattService> services = profile.getServices();
                     for (BleGattService service : services){
                         String uuid = service.getUUID().toString();
-                        Log.v("brad", "service: " + uuid);
+                        //Log.v("brad", "service: " + uuid);
 
                         List<BleGattCharacter> cs = service.getCharacters();
                         for (BleGattCharacter c : cs){
-                            Log.v("brad", "c: " + c);
+                            //Log.v("brad", "c: " + c);
                         }
 
                     }
@@ -132,24 +132,29 @@ public class MainActivity extends AppCompatActivity {
 
     private String connectMAC = null;
 
-//    private UUID serviceUUID = UUID.fromString("0000180f-0000-1000-8000-00805f9b34fb");
-//    private UUID characterUUID = UUID.fromString("00002a19-0000-1000-8000-00805f9b34fb");
-//
-//    public void test4(View view) {
-//        mClient.notify(connectMAC, serviceUUID, characterUUID, new BleNotifyResponse() {
-//            @Override
-//            public void onNotify(UUID service, UUID character, byte[] value) {
-//
-//            }
-//
-//            @Override
-//            public void onResponse(int code) {
-//                if (code == REQUEST_SUCCESS) {
-//
-//                }
-//            }
-//        });
-//    }
+    private UUID serviceUUID = UUID.fromString("0000180f-0000-1000-8000-00805f9b34fb");
+    private UUID characterUUID = UUID.fromString("00002a19-0000-1000-8000-00805f9b34fb");
+
+    public void test4(View view) {
+        mClient.notify(connectMAC, serviceUUID, characterUUID, new BleNotifyResponse() {
+            @Override
+            public void onNotify(UUID service, UUID character, byte[] value) {
+                Log.v("brad", "notify");
+                for (byte v : value){
+                    Log.v("brad", "value = " + v);
+                }
+            }
+
+            @Override
+            public void onResponse(int code) {
+                if (code == REQUEST_SUCCESS) {
+                    Log.v("brad", "success");
+                }else{
+                    Log.v("brad", "not success");
+                }
+            }
+        });
+    }
 
     private class MySearchListener implements SearchResponse {
 
