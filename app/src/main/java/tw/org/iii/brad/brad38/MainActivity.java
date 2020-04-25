@@ -13,14 +13,24 @@ import android.util.Log;
 import android.view.View;
 
 import com.inuker.bluetooth.library.BluetoothClient;
+import com.inuker.bluetooth.library.connect.listener.BleConnectStatusListener;
 import com.inuker.bluetooth.library.connect.listener.BluetoothStateListener;
+import com.inuker.bluetooth.library.connect.options.BleConnectOptions;
 import com.inuker.bluetooth.library.connect.response.BleConnectResponse;
+import com.inuker.bluetooth.library.connect.response.BleNotifyResponse;
+import com.inuker.bluetooth.library.model.BleGattCharacter;
 import com.inuker.bluetooth.library.model.BleGattProfile;
+import com.inuker.bluetooth.library.model.BleGattService;
 import com.inuker.bluetooth.library.search.SearchRequest;
 import com.inuker.bluetooth.library.search.SearchResult;
 import com.inuker.bluetooth.library.search.response.SearchResponse;
 
+import java.util.List;
+import java.util.UUID;
+
 import static com.inuker.bluetooth.library.Constants.REQUEST_SUCCESS;
+import static com.inuker.bluetooth.library.Constants.STATUS_CONNECTED;
+import static com.inuker.bluetooth.library.Constants.STATUS_DISCONNECTED;
 
 public class MainActivity extends AppCompatActivity {
     private BluetoothClient mClient;
@@ -31,6 +41,19 @@ public class MainActivity extends AppCompatActivity {
         }
 
     };
+
+    private final BleConnectStatusListener mBleConnectStatusListener = new BleConnectStatusListener() {
+
+        @Override
+        public void onConnectStatusChanged(String mac, int status) {
+            if (status == STATUS_CONNECTED) {
+                Log.v("brad", "connected");
+            } else if (status == STATUS_DISCONNECTED) {
+                Log.v("brad", "disconnected");
+            }
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -76,17 +99,58 @@ public class MainActivity extends AppCompatActivity {
 
     public void test3(View view) {
         Log.v("brad", "connecting...");
-        mClient.connect(connectMAC, new BleConnectResponse() {
+
+        BleConnectOptions options = new BleConnectOptions.Builder()
+                .setConnectRetry(3)   // 连接如果失败重试3次
+                .setConnectTimeout(30000)   // 连接超时30s
+                .setServiceDiscoverRetry(3)  // 发现服务如果失败重试3次
+                .setServiceDiscoverTimeout(20000)  // 发现服务超时20s
+                .build();
+
+        mClient.connect(connectMAC, options, new BleConnectResponse() {
             @Override
             public void onResponse(int code, BleGattProfile profile) {
                 if (code == REQUEST_SUCCESS) {
-                    Log.v("brad", "connected");
+                    Log.v("brad", "respone success");
+
+                    List<BleGattService> services = profile.getServices();
+                    for (BleGattService service : services){
+                        String uuid = service.getUUID().toString();
+                        Log.v("brad", "service: " + uuid);
+
+                        List<BleGattCharacter> cs = service.getCharacters();
+                        for (BleGattCharacter c : cs){
+                            Log.v("brad", "c: " + c);
+                        }
+
+                    }
+
                 }
             }
         });
     }
 
     private String connectMAC = null;
+
+//    private UUID serviceUUID = UUID.fromString("0000180f-0000-1000-8000-00805f9b34fb");
+//    private UUID characterUUID = UUID.fromString("00002a19-0000-1000-8000-00805f9b34fb");
+//
+//    public void test4(View view) {
+//        mClient.notify(connectMAC, serviceUUID, characterUUID, new BleNotifyResponse() {
+//            @Override
+//            public void onNotify(UUID service, UUID character, byte[] value) {
+//
+//            }
+//
+//            @Override
+//            public void onResponse(int code) {
+//                if (code == REQUEST_SUCCESS) {
+//
+//                }
+//            }
+//        });
+//    }
+
     private class MySearchListener implements SearchResponse {
 
         @Override
@@ -105,6 +169,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.v("brad", "i got it");
                 connectMAC = mac;
                 mClient.stopSearch();
+                mClient.registerConnectStatusListener(connectMAC, mBleConnectStatusListener);
             }
 
         }
@@ -123,7 +188,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+
+        mClient.disconnect(connectMAC);
         mClient.closeBluetooth();
         mClient.unregisterBluetoothStateListener(mBluetoothStateListener);
+        mClient.unregisterConnectStatusListener(connectMAC, mBleConnectStatusListener);
     }
 }
